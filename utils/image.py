@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import cv2
+import numpy
 
 def imread(path):
     """Read image from file
@@ -33,3 +34,11 @@ def overlay(fg, bg, pos_x, pos_y):
     img = bg.copy()
     img[pos_y:pos_y+fg.shape[0], pos_x:pos_x+fg.shape[1]] = fg
     return img
+
+
+def abs_diff(img0, img1):
+    return numpy.abs(img0-img1.astype('float32'))
+
+
+
+
