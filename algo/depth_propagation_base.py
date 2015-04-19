@@ -1,10 +1,9 @@
 #!/usr/bin/python
 __author__ = 's'
 
-
 import logging
 
-import motion_estimation
+import motion_estimation_sequence
 
 
 class DepthPropagation(object):
@@ -34,13 +33,14 @@ class DepthPropagationFwd(DepthPropagation):
         self.logger = logging.getLogger(__name__)
         self.res[0] = self.dpt[0]
         self.flowFwd = None
-        self.motion = motion_estimation.MotionEstimation()
+        # self.motion = motion_estimation.MotionEstimation()
+        self.motion = motion_estimation_sequence.MotionEstimationParallel()
 
     def preprocess_flow(self):
         self.logger.debug("Optcal flow calculation")
         if self.flowFwd is None:
-            self.flowFwd = [None, ] + [self.motion.calc(self.img[i], self.img[i-1])
-                                       for i in range(1, self.length)]
+
+            self.flowFwd = self.motion.calc(self.img)
 
     def compensate_fwd(self):
         self.logger.debug("Motion compensation")
