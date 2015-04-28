@@ -8,12 +8,13 @@ import shutil
 
 import algo.motion_estimation_sequence
 import utils.image
+import utils.logger_setup
+from time import time
 
 try:
     import algo.fastdeepflow as fastdeepflow
 except ImportError:
     raise Exception("Failed to load fastdeepflow module. Download from https://github.com/serge-m/deepflow")
-    fastdeepflow = None
 
 
 path_dir_cur = os.path.dirname(__file__)
@@ -27,10 +28,32 @@ def mkdirs(path, mode=0777, exist_ok=False):
         os.makedirs(path, mode=mode)
 
 
+def flow_equal(flow1, flow2):
+    if len(flow1) != len(flow2):
+        print "length different"
+        return False
+
+    for idx, f1, f2 in zip(range(len(flow1)), flow1, flow2):
+        if f1 is None:
+            if f2 is not None:
+                print "idx {}. None differs".format(idx)
+                return False
+            continue
+
+        if not numpy.array_equal(numpy.array(f1), numpy.array(f2)):
+            print "idx {}. Non equal".format(idx)
+            return False
+
+    print("Equal")
+    return True
+
+
 class TestMotionEstimationSequence(unittest.TestCase):
     def __init__(self, *args, **kwargs):
+
         super(TestMotionEstimationSequence, self).__init__(*args, **kwargs)
 
+        utils.logger_setup.setup_logging(default_level=logging.DEBUG)
         logger = logging.getLogger(__name__)
 
         if os.path.exists(path_result_dir):
@@ -77,3 +100,47 @@ class TestMotionEstimationSequence(unittest.TestCase):
 
         for i in range(0, len(flow_parallel)):
             self.assertTrue(numpy.array_equal(flow_parallel[i], flow_sequential[i]))
+
+    def test_cached(self):
+        logger = logging.getLogger(__name__)
+        templ_path_frm = os.path.join(path_dir_input, 'frame_{:04d}.png')
+        idx_frame_start = 1
+        idx_frame_end = 6
+
+        path_cache = os.path.join(path_result_dir, "cache.data")
+        img = [utils.image.imread(templ_path_frm.format(i)) for i in range(idx_frame_start, idx_frame_end)]
+
+        if os.path.exists(path_cache):
+            os.remove(path_cache)
+
+        self.assertFalse(os.path.exists(path_cache))
+
+        me_parallel = algo.motion_estimation_sequence.MotionEstimationParallel()
+        me_cached = algo.motion_estimation_sequence.MotionEstimationParallelCached(path_cahce=path_cache)
+
+        start = time()
+        flow_parallel = me_parallel.calc(img)
+        time_parallel = time() - start
+        logger.info("time_parallel {}".format(time_parallel))
+
+        start = time()
+        flow_cached1 = me_cached.calc(img[1:-1])
+        time_cached1 = time() - start
+        logger.info("time_cached1 {}".format(time_cached1))
+
+        start = time()
+        flow_cached2 = me_cached.calc(img)
+        time_cached2 = time() - start
+        logger.info("time_cached2 {}".format(time_cached2))
+
+        start = time()
+        flow_cached3 = me_cached.calc(img)
+        time_cached3 = time() - start
+        logger.info("time_cached3 {}".format(time_cached3))
+
+        self.assertTrue(time_cached3 < 0.1 * time_cached2)
+        self.assertTrue(time_cached3 < 0.1 * time_cached1)
+        self.assertTrue(flow_equal(flow_parallel, flow_cached2))
+        self.assertTrue(flow_equal(flow_parallel, flow_cached3))
+        self.assertTrue(flow_equal(flow_parallel[2:-1], flow_cached1[1:]))
+

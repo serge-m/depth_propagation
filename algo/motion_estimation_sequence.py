@@ -1,6 +1,10 @@
 __author__ = 's'
 import multiprocessing
 import logging
+import os
+import shelve
+import hashlib
+import numpy
 
 from .motion_estimation import MotionEstimation
 
@@ -78,3 +82,43 @@ class MotionEstimationSequential(MotionEstimation):
     def calc_pairs(self, pairs_images):
         return [do_calculation(image_cur, image_ref)
                 for (image_cur, image_ref) in pairs_images]
+
+
+class MotionEstimationParallelCached(MotionEstimationParallel):
+    def __init__(self, path_cahce="cache.dat", **args_parallel):
+        MotionEstimationParallel.__init__(self, **args_parallel)
+        self.cache = shelve.open(path_cahce)
+
+    def calc_pairs(self, pairs_images):
+        logger = logging.getLogger(__name__)
+
+        logger.debug("Generating hashes")
+        list_hashes = [hash_of_img_pair(image_cur, image_ref) for (image_cur, image_ref) in pairs_images]
+        list_idx_to_process = [i for i in range(len(pairs_images)) if list_hashes[i] not in self.cache]
+        logger.debug("list_idx_to_process {}".format(list_idx_to_process))
+
+        logger.debug("Hashes to process:")
+        for idx in list_idx_to_process:
+            logger.debug("{} {}".format(idx, list_hashes[idx]))
+
+
+        pairs_images_to_process = [pairs_images[i] for i in list_idx_to_process]
+        assert(len(pairs_images_to_process) == len(list_idx_to_process))
+
+        processed = MotionEstimationParallel.calc_pairs(self, pairs_images_to_process)
+        if len(processed) != len(pairs_images_to_process):
+            raise Exception("Invalid flow")
+
+        for idx, flow in zip(list_idx_to_process, processed):
+            self.cache[list_hashes[idx]] = flow
+            self.cache.sync()
+            logger.debug("flow for hash {} saved".format(list_hashes[idx]))
+
+        return [self.cache[hash_cur] for hash_cur in list_hashes]
+
+
+def hash_of_img_pair(image_cur, image_ref):
+    h0 = hashlib.sha1(numpy.ascontiguousarray(image_cur)).hexdigest()
+    h1 = hashlib.sha1(numpy.ascontiguousarray(image_ref)).hexdigest()
+    hash = h0 + "_" + h1
+    return hash
