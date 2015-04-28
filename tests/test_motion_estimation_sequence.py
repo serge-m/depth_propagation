@@ -138,9 +138,19 @@ class TestMotionEstimationSequence(unittest.TestCase):
         time_cached3 = time() - start
         logger.info("time_cached3 {}".format(time_cached3))
 
+        del me_cached
+        me_cached2 = algo.motion_estimation_sequence.MotionEstimationParallelCached(path_cahce=path_cache)
+
+        start = time()
+        flow_cached4 = me_cached2.calc(img)
+        time_cached4 = time() - start
+        logger.info("time_cached4 {}".format(time_cached4))
+
         self.assertTrue(time_cached3 < 0.1 * time_cached2)
         self.assertTrue(time_cached3 < 0.1 * time_cached1)
+        self.assertTrue(time_cached4 < 0.1 * time_cached1)
         self.assertTrue(flow_equal(flow_parallel, flow_cached2))
         self.assertTrue(flow_equal(flow_parallel, flow_cached3))
+        self.assertTrue(flow_equal(flow_parallel, flow_cached4))
         self.assertTrue(flow_equal(flow_parallel[2:-1], flow_cached1[1:]))
 
