@@ -156,7 +156,9 @@ class DPWithColorMapping(DepthPropagationFwd):
         dpt_prev_w_b = add_borders(dpt_prev_w)
         frm_prev_w_gray_b = add_borders(frm_prev_w_gray)
 
+        self.logger.debug("color mapping started")
         res = color_mapping(dpt_prev_w, frm_cur_gray, dpt_prev_w_b, frm_prev_w_gray_b, block_size, super_block_size)
+        self.logger.debug("color mapping done")
         self.res[i] = res
 
 
