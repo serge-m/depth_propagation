@@ -34,7 +34,7 @@ class DepthPropagationFwd(DepthPropagation):
         self.res[0] = self.dpt[0]
         self.flowFwd = None
         # self.motion = motion_estimation.MotionEstimation()
-        self.motion = motion_estimation_sequence.MotionEstimationParallel()
+        self.motion = motion_estimation_sequence.MotionEstimationParallelCached()
 
     def preprocess_flow(self):
         self.logger.debug("Optcal flow calculation")
