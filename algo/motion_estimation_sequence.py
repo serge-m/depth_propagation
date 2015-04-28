@@ -41,6 +41,9 @@ class MotionEstimationParallel(MotionEstimation):
         self.pool_size = pool_size
 
     def calc(self, images):
+        return [None,] + self.calc_pairs([(images[i], images[i-1]) for i in range(1, len(images))])
+
+    def calc_pairs(self, pairs_images):
         """
         Calculate optical flow between adjacent frames of input image sequence
 
@@ -50,7 +53,7 @@ class MotionEstimationParallel(MotionEstimation):
         """
         logger = logging.getLogger(__name__)
         logger.debug("Creating pool of tasks")
-        inputs = [(images[i], images[i-1], i) for i in range(1, len(images))]
+        inputs = [(image_cur, image_ref, i) for i, (image_cur, image_ref) in enumerate(pairs_images)]
 
         pool = multiprocessing.Pool(processes=self.pool_size)
         logger.debug("Running")
@@ -59,7 +62,7 @@ class MotionEstimationParallel(MotionEstimation):
         logger.debug("Closed")
         pool.join()  # wrap up current tasks
         logger.debug("Joined")
-        return [None,] + pool_outputs
+        return pool_outputs
 
 
 class MotionEstimationSequential(MotionEstimation):
@@ -68,6 +71,10 @@ class MotionEstimationSequential(MotionEstimation):
             raise Exception("Failed to load optical flow library")
 
     def calc(self, images):
-        flow_fwd = [None, ] + [do_calculation(images[i], images[i-1])
-                               for i in range(1, len(images))]
+        flow_fwd = [None, ] + self.calc_pairs([(images[i], images[i-1])
+                                               for i in range(1, len(images))])
         return flow_fwd
+
+    def calc_pairs(self, pairs_images):
+        return [do_calculation(image_cur, image_ref)
+                for (image_cur, image_ref) in pairs_images]
