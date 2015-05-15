@@ -35,6 +35,9 @@ class DepthPropagation(object):
 
 class DepthPropagationFwd(DepthPropagation):
     def __init__(self, img, dpt):
+        if dpt[0] is None:
+            raise Exception("First depth map frame must be defined")
+
         super(DepthPropagationFwd, self).__init__(img, dpt)
         self.logger = logging.getLogger(__name__)
         self.res[0] = self.dpt[0]
@@ -57,5 +60,15 @@ class DepthPropagationFwd(DepthPropagation):
     def preprocess(self):
         self.preprocess_flow()
         self.compensate_fwd()
+
+
+class DepthPropagationBwd(DepthPropagationFwd):
+    def __init__(self, img, dpt):
+        if dpt[-1] is None:
+            raise Exception("Last depth map frame must be defined")
+        super(DepthPropagationBwd, self).__init__(img[::-1], dpt[::-1])
+
+    def __getitem__(self, key):
+        return self.res[self.length-1-key]
 
 
