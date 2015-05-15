@@ -28,24 +28,7 @@ def mkdirs(path, mode=0777, exist_ok=False):
         os.makedirs(path, mode=mode)
 
 
-def flow_equal(flow1, flow2):
-    if len(flow1) != len(flow2):
-        print "length different"
-        return False
 
-    for idx, f1, f2 in zip(range(len(flow1)), flow1, flow2):
-        if f1 is None:
-            if f2 is not None:
-                print "idx {}. None differs".format(idx)
-                return False
-            continue
-
-        if not numpy.array_equal(numpy.array(f1), numpy.array(f2)):
-            print "idx {}. Non equal".format(idx)
-            return False
-
-    print("Equal")
-    return True
 
 
 class TestMotionEstimationSequence(unittest.TestCase):

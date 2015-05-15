@@ -20,9 +20,15 @@ class DepthPropagation(object):
     def preprocess(self):
         pass
 
-
     def __getitem__(self, key):
         return self.res[key]
+
+    def __len__(self):
+        """
+        Length of image sequence
+        :return:
+        """
+        return self.length
 
 
 
