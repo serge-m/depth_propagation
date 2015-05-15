@@ -7,7 +7,6 @@ Proceedings of the 19th ACM international conference on Multimedia. ACM, 2011.
 
 from depth_propagation_base import DepthPropagationFwd
 import cv2
-import utils.image
 import numpy
 
 import scipy.ndimage.filters
@@ -25,27 +24,16 @@ def get_g():
 
 
 def process_block(sbr, sbr_prime, b, b_prime, rg, g):
-    #     print b, b_prime
     all_c = sbr_prime.ravel()
     all_d = sbr.ravel()
     m = numpy.zeros(shape=(256,), dtype=numpy.int32)
-    #     m_ = numpy.zeros(shape=(256,), dtype=numpy.int32)
     dv = numpy.zeros(shape=(256,), dtype=numpy.int32)
-    #     m_[all_c] = 1
 
     for c, d in zip(all_c, all_d):
         dv[c] += d
         m[c] += 1
 
-    #     dv = (dv/m.astype(numpy.float32)).astype(numpy.int32)
-    #     dv[m==0] = 0
-
-    #     print dv.reshape((16,16))
-    dv = numpy.where(m!=0, (dv/m.astype(numpy.float32)).astype(numpy.int32), 0)
-    #     print dv.reshape((16,16))
-    #     print numpy.array_equal(m!=0, m_)
-
-    #     plt.imshow(sbr_prime)
+    dv = numpy.where(m != 0, (dv/m.astype(numpy.float32)).astype(numpy.int32), 0)
 
     all_c = b_prime.ravel()
     all_d = b.ravel()
@@ -55,27 +43,14 @@ def process_block(sbr, sbr_prime, b, b_prime, rg, g):
     for idx in range(len(all_c)):
         c = all_c[idx]
         d = all_d[idx]
-        #     print c, dv[c]
-
-        #     plt.plot(dv, '.')
-        #     plt.plot(numpy.linspace(c-10, c+10, num=10), numpy.linspace(50, 50, num=10), '*')
-        #     plt.ylim([60,90])
-        #     plt.xlim([c-rg,c+rg])
         dv_b = numpy.pad(dv, (rg,), 'constant', constant_values=(0.,))
         m_b = numpy.pad(m, (rg,), 'constant', constant_values=(0.,))
 
-
-        #     plt.figure()
-
         start = c-rg+rg
         finish = c+rg+1+rg
-        #     plt.plot(dv_b[start:finish])
 
-        depth = dv_b[start:finish]*(m_b[start:finish]!=0)*g
-        #     plt.plot(depth)
         weights = (m_b[start:finish]!=0)*g
         depth = dv_b[start:finish]*weights
-        #     plt.plot(weights)
 
         sum_weights = weights.sum()
         if sum_weights > 0:
@@ -83,7 +58,6 @@ def process_block(sbr, sbr_prime, b, b_prime, rg, g):
         else:
             d_res = d
         all_res[idx] = d_res
-    #     print d, d_res
     return all_res.reshape(b.shape)
 
 
@@ -105,7 +79,6 @@ def process_block_faster(sbr, sbr_prime, b, b_prime, rg, g):
     res = numpy.zeros_like(b)
     all_res = res.ravel()
 
-
     for idx in range(len(all_c)):
         c = all_c[idx]
         d = all_d[idx]
@@ -113,7 +86,7 @@ def process_block_faster(sbr, sbr_prime, b, b_prime, rg, g):
         sum_weights = 0.
         sum_depth = 0.
         for j in range(0, 2*rg+1):
-            w = (m[c+j]!=0)*g[j]
+            w = (m[c+j] != 0) * g[j]
             sum_weights += w
             sum_depth += dv[c+j] * w
 
