@@ -11,6 +11,10 @@ import utils.image
 import numpy
 
 import scipy.ndimage.filters
+
+import numba
+
+
 def get_g():
     sigma = 3
     r = int(3*sigma)
@@ -83,7 +87,42 @@ def process_block(sbr, sbr_prime, b, b_prime, rg, g):
     return all_res.reshape(b.shape)
 
 
-def color_mapping(dpt_prev_w, frm_cur_gray, dpt_prev_w_b, frm_prev_w_gray_b, block_size, super_block_size, func_process_block=process_block):
+@numba.jit
+def process_block_faster(sbr, sbr_prime, b, b_prime, rg, g):
+    all_c = sbr_prime.ravel()
+    all_d = sbr.ravel()
+    m  = numpy.zeros(shape=(256+2*rg,), dtype=numpy.int32)
+    dv = numpy.zeros(shape=(256+2*rg,), dtype=numpy.float32)
+
+    for c, d in zip(all_c, all_d):
+        dv[c+rg] += d
+        m [c+rg] += 1
+
+    dv = dv / numpy.maximum(m, 1)
+
+    all_c = b_prime.ravel()
+    all_d = b.ravel()
+    res = numpy.zeros_like(b)
+    all_res = res.ravel()
+
+
+    for idx in range(len(all_c)):
+        c = all_c[idx]
+        d = all_d[idx]
+
+        sum_weights = 0.
+        sum_depth = 0.
+        for j in range(0, 2*rg+1):
+            w = (m[c+j]!=0)*g[j]
+            sum_weights += w
+            sum_depth += dv[c+j] * w
+
+        all_res[idx] = sum_depth / sum_weights if sum_weights > 0 else d
+
+    return all_res.reshape(b.shape)
+
+
+def color_mapping(dpt_prev_w, frm_cur_gray, dpt_prev_w_b, frm_prev_w_gray_b, block_size, super_block_size, func_process_block=process_block_faster):
     res = numpy.zeros_like(dpt_prev_w)
 
     rg, g = get_g()
@@ -112,7 +151,7 @@ def get_part(img):
     return img.astype('uint8')
 
 class DPWithColorMapping(DepthPropagationFwd):
-    def __init__(self, img, dpt, func_color_mapping=color_mapping, func_process_block=process_block):
+    def __init__(self, img, dpt, func_color_mapping=color_mapping, func_process_block=process_block_faster):
         super(DPWithColorMapping, self).__init__(img, dpt)
         self.func_color_mapping = func_color_mapping
         self.func_process_block = func_process_block

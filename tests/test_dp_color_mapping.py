@@ -93,13 +93,21 @@ class TestDPColorMapping(unittest.TestCase):
         dp_loaded = [cv2.cvtColor(utils.image.imread(templ_dp_color_mapping_ref.format(i)), cv2.COLOR_RGB2GRAY) for i in
                   range(0, 10)]
 
-
-        utils.flow.flow_equal(dp_loaded, dp, verbose=1)
-
         for i in range(len(dp)):
             d = utils.image.abs_diff(dp[idx_frame], dp_loaded[idx_frame])
             logger.info("Frame {}, max {}, sum {}".format(i, d.max(), d.sum()))
             self.assertTrue(d.max() < 10)
+
+
+        # compare with faster version
+        templ_dp_color_mapping_ref = os.path.join(path_reference_dir,"fwd/block_default_faster/dp_{:05d}.png")
+        dp_loaded = [cv2.cvtColor(utils.image.imread(templ_dp_color_mapping_ref.format(i)), cv2.COLOR_RGB2GRAY) for i in
+                  range(0, 10)]
+
+        for i in range(len(dp)):
+            d = utils.image.abs_diff(dp[idx_frame], dp_loaded[idx_frame])
+            logger.info("Frame {}, max {}, sum {}".format(i, d.max(), d.sum()))
+            self.assertTrue(d.max() < 5)
 
 
 if __name__ == '__main__':
