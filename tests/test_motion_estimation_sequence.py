@@ -9,6 +9,7 @@ import shutil
 import algo.motion_estimation_sequence
 import utils.image
 import utils.logger_setup
+from utils.flow import flow_equal
 from time import time
 
 try:
