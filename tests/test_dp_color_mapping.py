@@ -71,6 +71,7 @@ class TestDPColorMapping(unittest.TestCase):
 
         dp = algo.dp_color_mapping.DPWithColorMapping(img, dpt, )
         dp0 = algo.DepthPropagationFwd(img, dpt)
+        dp_bwd = algo.DepthPropagationBwd(img[::-1], dpt[::-1])
 
         start = time()
         dp.preprocess()
@@ -79,6 +80,12 @@ class TestDPColorMapping(unittest.TestCase):
         start = time()
         dp0.preprocess()
         logger.info("Time dp0 {}".format(time()-start))
+
+        start = time()
+        dp_bwd.preprocess()
+        logger.info("Time db_bwd {}".format(time()-start))
+
+        self.assertTrue(utils.flow.flow_equal(dp0[::-1], dp_bwd))
 
         idx_frame = 2
         gt = dpt_gt[idx_frame]
