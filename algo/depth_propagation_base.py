@@ -61,6 +61,14 @@ class DepthPropagationFwd(DepthPropagation):
         self.preprocess_flow()
         self.compensate_fwd()
 
+    def get_propagation_distance(self, idx_frame):
+        """
+        Calculates distance (or some alternative) from key frames to frame with index idx_frame
+        :param idx_frame:
+        :return:
+        """
+        return abs(0-idx_frame)
+
 
 class DepthPropagationBwd(DepthPropagationFwd):
     def __init__(self, img, dpt):
@@ -71,4 +79,10 @@ class DepthPropagationBwd(DepthPropagationFwd):
     def __getitem__(self, key):
         return self.res[self.length-1-key]
 
-
+    def get_propagation_distance(self, idx_frame):
+        """
+        Calculates distance (or some alternative) from key frames to frame with index idx_frame
+        :param idx_frame:
+        :return:
+        """
+        return abs(self.length-1-idx_frame)
