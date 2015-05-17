@@ -182,7 +182,7 @@ class DPWithColorMapping(DepthPropagationFwd):
 
     def compensate_fwd(self):
         self.logger.debug("Motion compensation")
-        for i in range(1, self.length):
+        for i in range(1, self.__len__()):
             self.color_mapped_propagation_one_frame(i)
 
 
