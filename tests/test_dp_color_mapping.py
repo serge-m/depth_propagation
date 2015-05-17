@@ -18,7 +18,7 @@ from time import time
 import utils.flow
 import utils.logger_setup
 import logging
-
+import algo.dp_bidirectional
 
 path_dir_cur = os.path.dirname(__file__)
 path_dir_input = os.path.join(path_dir_cur, 'data/input', '')
@@ -29,6 +29,30 @@ def mkdirs(path, mode=0777, exist_ok=False):
     if not os.path.exists(path) or not exist_ok:
         os.makedirs(path, mode=mode)
 
+
+def load_data(idx_frame_start = 1,
+              idx_frame_end = 11,
+              list_idx_frame_as_start = None):
+
+    templ_path_frm = os.path.join(path_dir_input, 'sintel/final/alley_2/'    , 'frame_{:04d}.png')
+    templ_path_dpt = os.path.join(path_dir_input, 'sintel/depth_viz/alley_2/', 'frame_{:04d}.png')
+
+    templ_path_dst = os.path.join(path_result_dir, 'dp_{:05d}.png')
+
+    def load_and_crop(path):
+        img = utils.image.imread(path)
+        img = img[150:350,250:400,]
+        return img
+
+    img = [load_and_crop(templ_path_frm.format(i)) for i in range(idx_frame_start, idx_frame_end)]
+    dpt = [None for i in range(idx_frame_start, idx_frame_end)]
+    dpt_gt = [cv2.cvtColor(load_and_crop(templ_path_dpt.format(i)), cv2.COLOR_RGB2GRAY) for i in
+              range(idx_frame_start, idx_frame_end)]
+
+    for idx in list_idx_frame_as_start:
+        dpt[idx] = cv2.cvtColor(load_and_crop(templ_path_dpt.format(idx+idx_frame_start)), cv2.COLOR_RGB2GRAY)
+
+    return img, dpt, dpt_gt
 
 class TestDPColorMapping(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -46,28 +70,12 @@ class TestDPColorMapping(unittest.TestCase):
             raise Exception("Failed to locate reference directory")
         mkdirs(path_result_dir, exist_ok=False)
 
+
+
     def test(self):
         logger = logging.getLogger(__name__)
 
-        templ_path_frm = os.path.join(path_dir_input, 'sintel/final/alley_2/'    , 'frame_{:04d}.png')
-        templ_path_dpt = os.path.join(path_dir_input, 'sintel/depth_viz/alley_2/', 'frame_{:04d}.png')
-        idx_frame_start = 1
-        idx_frame_end = 11
-
-        templ_path_dst = os.path.join(path_result_dir, 'dp_{:05d}.png')
-
-        def load_and_crop(path):
-            img = utils.image.imread(path)
-            img = img[150:350,250:400,]
-            return img
-
-        img = [load_and_crop(templ_path_frm.format(i)) for i in range(idx_frame_start, idx_frame_end)]
-        dpt = [None for i in range(idx_frame_start, idx_frame_end)]
-        dpt_gt = [cv2.cvtColor(load_and_crop(templ_path_dpt.format(i)), cv2.COLOR_RGB2GRAY) for i in
-                  range(idx_frame_start, idx_frame_end)]
-
-        dpt[0] = cv2.cvtColor(load_and_crop(templ_path_dpt.format(idx_frame_start)), cv2.COLOR_RGB2GRAY)
-
+        img, dpt, dpt_gt = load_data(list_idx_frame_as_start=[0,])
 
         dp = algo.dp_color_mapping.DPWithColorMapping(img, dpt, )
         dp0 = algo.DepthPropagationFwd(img, dpt)
@@ -115,6 +123,29 @@ class TestDPColorMapping(unittest.TestCase):
             d = utils.image.abs_diff(dp[idx_frame], dp_loaded[idx_frame])
             logger.info("Frame {}, max {}, sum {}".format(i, d.max(), d.sum()))
             self.assertTrue(d.max() < 5)
+
+    def test_bidir(self):
+        logger = logging.getLogger(__name__)
+
+        img, dpt, _ = load_data(list_idx_frame_as_start=[0, 9])
+
+        templ_path_dpt = os.path.join(path_reference_dir, 'bidir/', 'dp_{:05d}.png')
+        dpt_gt = [cv2.cvtColor(utils.image.imread(templ_path_dpt.format(i)), cv2.COLOR_RGB2GRAY) for i in
+              range(0, 10)]
+
+        dp = algo.dp_bidirectional.DepthPropagationBidir(img,
+                                                         dpt,
+                                                         [algo.DepthPropagationFwd,
+                                                          algo.DepthPropagationBwd],
+                                                         strategy="dp_distance")
+        start = time()
+        dp.preprocess()
+        logger.info("Time dp bidirectional {}".format(time()-start))
+
+        dp_int = map(lambda d: numpy.round(d), dp)
+
+        self.assertTrue(utils.flow.flow_equal(dp_int, dpt_gt))
+
 
 
 if __name__ == '__main__':
