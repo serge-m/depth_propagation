@@ -7,13 +7,26 @@ import motion_estimation_sequence
 
 
 class DepthPropagation(object):
+    """
+    Base class for depth propagation algorithms.
+    """
+
     def __init__(self):
         self.res = []
 
     def preprocess(self):
+        """
+        Some preprocessing, possible computation intensive
+        :return:
+        """
         pass
 
     def __getitem__(self, key):
+        """
+        Return result of computation using operator[]
+        :param key: frame index, starting from 0
+        :return:
+        """
         return self.res[key]
 
     def __len__(self):
@@ -24,6 +37,11 @@ class DepthPropagation(object):
         return len(self.res)
 
     def get_propagation_distance(self, idx_frame):
+        """
+        Some distance measure betweek key frame(s) and frame idx_frame
+        :param idx_frame:
+        :return:
+        """
         raise Exception("Not implemented")
 
 
