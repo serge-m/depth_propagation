@@ -323,7 +323,153 @@ vh.plot_optical_flow(*flow_bwd_block, stepu=2, stepv=2)
 numpy.median(u1s)
 
 
-# In[145]:
+# In[322]:
+
+# th_morph = 0.9
+# block_size = 20
+
+# def block_mv_median_for_occlusions(flow_bwd):
+#     flow_bwd = map(lambda x:x.copy(), flow_bwd)
+#     h, w = flow_bwd[0].shape
+#     for h_start in xrange(0, h, block_size):
+#         for w_start in xrange(0, w, block_size):
+#             def get_patch(img):
+#                 return img[h_start:h_start+block_size, w_start:w_start+block_size]
+
+#             morph_block = get_patch(morph)
+#             flow_bwd_block = map(get_patch, flow_bwd)
+#             u1, v1 = flow_bwd_block
+
+#             where_low_th = morph_block<th_morph
+
+#             u1[where_low_th] = numpy.median(u1[where_low_th])
+#             v1[where_low_th] = numpy.median(v1[where_low_th])
+
+#     return flow_bwd
+
+# start = time()
+# flow_bwd_filt = block_mv_median_for_occlusions(flow_bwd)
+# logger.info("block_mv_median_for_occlusions time {}".format(time()-start))
+
+# # plt.imshow(morph, cmap=plt.cm.gray)
+
+# list_coeffs = numpy.array([[1,1], [0.5,0.5], [-1,-1], [-0.5,-0.5]], dtype=numpy.float32)
+
+# list_img0_warped = []
+# list_flow_bwd_filt_coeff = []
+# for coeff in list_coeffs:
+#     flow_bwd_filt_coeff = coeff[0]*flow_bwd_filt[0], coeff[1]*flow_bwd_filt[1]
+#     list_flow_bwd_filt_coeff.append(flow_bwd_filt_coeff)
+#     list_img0_warped.append(algo.fastdeepflow.warp_image(img0, *flow_bwd_filt_coeff))
+#     print coeff
+# #     plt.figure()
+# #     plt.imshow(list_img0_warped[-1].astype('uint8'))
+
+
+
+# ############################
+# list_dpt0_warped = list_img0_warped
+# map_morph = morph<th_morph
+# # def block_histo_choose(map_morph, img0, list_img0_warped, list_flow_bwd_filt_coeff, list_dpt0_warped):
+# u_res, v_res = numpy.zeros_like(list_flow_bwd_filt_coeff[0][0]), numpy.zeros_like(list_flow_bwd_filt_coeff[0][1])
+
+# dpt_res = numpy.zeros_like(list_dpt0_warped[0])
+
+# h, w, _ = img0.shape
+# #     def calc_hist(img0_block):
+# #     #     plt.figure()
+# #     #     plt.imshow(img0_block.astype('uint8'))
+# #         #hist = cv2.calcHist(img0_block.astype('uint8'), [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+# #         hist = cv2.calcHist([img0_block.astype('uint8')], [0, 1, 2], None, [8,]*3, [0, 256]*3)
+# #     #     hist = cv2.normalize(hist)
+# #         hist = hist.flatten()
+# #     #     print hist
+# #         return hist
+
+# for h_start in xrange(2*block_size, h, block_size):
+#     for w_start in xrange(5*block_size, w, block_size):
+#         def get_patch(img):
+#             return img[h_start:h_start+block_size, w_start:w_start+block_size]
+
+#         img0_block = get_patch(img0)
+
+# #         print hist.shape, hist.dtype
+
+#         list_img0_warped_block = map(get_patch, list_img0_warped)
+#         map_morph_block = get_patch(map_morph)
+
+#         plt.figure()
+#         plt.imshow(map_morph_block)
+#         plt.figure()
+#         plt.imshow(img0_block)
+
+#         plt.figure()
+#         for idx, bl in enumerate(list_img0_warped_block):
+#             plt.subplot(2,2, idx+1)
+#             plt.imshow(bl.astype('uint8'))
+
+#         def calc_hist(img0_block):
+#             hist = cv2.calcHist([img0_block.astype('uint8')], [0, 1, 2], 
+#                                 map_morph_block.astype('uint8'), [8,]*3, [0, 256]*3)
+#             hist = cv2.normalize(hist)
+# #                 hist = hist.flatten()
+#             return hist
+
+#         hist = calc_hist(img0_block)
+#         list_hist = map(calc_hist, list_img0_warped_block)
+#         #print "list_hist", len(list_hist), [hi.shape for hi in list_hist], list_hist
+
+#         plt.figure()
+#         plt.plot(hist.ravel(), )
+#         plt.figure(figsize=(20,10))
+#         for idx, hi in enumerate(list_hist):
+#             plt.subplot(2,2, idx+1)
+#             plt.plot(hi.ravel(), marker='o+xs*^'[idx])
+# #                 print "d", numpy.abs(hist-hi).sum()
+# #                 print list_hist[idx]
+#         list_dist = map(lambda hist1: cv2.compareHist(hist1, hist, cv2.cv.CV_COMP_CHISQR), list_hist)
+#         print "list_dist", list_dist
+#         idx_best = numpy.argmin(list_dist)
+
+#         get_patch(u_res)[:,:] = get_patch(list_flow_bwd_filt_coeff[idx_best][0])
+#         get_patch(v_res)[:,:] = get_patch(list_flow_bwd_filt_coeff[idx_best][1])
+#         get_patch(dpt_res)[:,:] = get_patch(list_dpt0_warped[idx_best])
+# #             distances = map(lambda warped_block: )
+#         break
+#     break
+
+
+# #     return u_res, v_res, dpt_res
+
+# print img0.shape
+# u_res, v_res, dpt_res = block_histo_choose(morph<th_morph, img1, list_img0_warped, list_flow_bwd_filt_coeff, list_img0_warped)
+    
+# # plt.figure()
+# # plt.imshow(morph)
+# # vh.plot_optical_flow(*flow_bwd, stepu=8, stepv=4)
+
+# # plt.figure()
+# # plt.imshow(morph)
+# # vh.plot_optical_flow(*flow_bwd_filt, stepu=8, stepv=4)
+
+# # numpy.median(u1s)
+
+# # plt.figure()
+# # plt.imshow(img1)
+# # plt.figure()
+# # plt.imshow(img0)
+# plt.figure()
+# img0_warped = algo.fastdeepflow.warp_image(img0, *flow_fwd).astype('uint8')
+# plt.imshow(img0_warped)
+# img0_warped_fixed = img0_warped.copy()
+# img0_warped_fixed[morph<th_morph] = dpt_res[morph<th_morph]
+# plt.figure()
+# plt.imshow(dpt_res.astype('uint8'))
+# plt.figure()
+# plt.imshow(img0_warped_fixed.astype('uint8'))
+
+
+# In[339]:
 
 th_morph = 0.9
 block_size = 20
@@ -351,7 +497,7 @@ start = time()
 flow_bwd_filt = block_mv_median_for_occlusions(flow_bwd)
 logger.info("block_mv_median_for_occlusions time {}".format(time()-start))
 
-plt.imshow(t, cmap=plt.cm.gray)
+# plt.imshow(morph, cmap=plt.cm.gray)
 
 list_coeffs = numpy.array([[1,1], [0.5,0.5], [-1,-1], [-0.5,-0.5]], dtype=numpy.float32)
 
@@ -362,59 +508,77 @@ for coeff in list_coeffs:
     list_flow_bwd_filt_coeff.append(flow_bwd_filt_coeff)
     list_img0_warped.append(algo.fastdeepflow.warp_image(img0, *flow_bwd_filt_coeff))
     print coeff
-#     plt.figure()
-#     plt.imshow(list_img0_warped[-1].astype('uint8'))
 
-def block_histo_choose(img0, list_img0_warped, list_flow_bwd_filt_coeff, list_dpt0_warped):
+############################
+list_dpt0_warped = list_img0_warped
+map_morph = morph<th_morph
+def block_histo_choose(map_morph, img0, list_img0_warped, list_flow_bwd_filt_coeff, list_dpt0_warped):
     u_res, v_res = numpy.zeros_like(list_flow_bwd_filt_coeff[0][0]), numpy.zeros_like(list_flow_bwd_filt_coeff[0][1])
-    
+
     dpt_res = numpy.zeros_like(list_dpt0_warped[0])
-    
+
     h, w, _ = img0.shape
-    def calc_hist(img):
-        hist = cv2.calcHist(img0_block, [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
-        hist = cv2.normalize(hist).flatten()
-        return hist
-    
-    for h_start in xrange(0, h, block_size):
-        for w_start in xrange(0, w, block_size):
+
+    for h_start in xrange(0*block_size, h, block_size):
+        for w_start in xrange(0*block_size, w, block_size):
             def get_patch(img):
                 return img[h_start:h_start+block_size, w_start:w_start+block_size]
 
             img0_block = get_patch(img0)
-            hist = calc_hist(img0_block)
-#             print hist.shape
-            
+
             list_img0_warped_block = map(get_patch, list_img0_warped)
+            map_morph_block = get_patch(map_morph)
+
+            if 0:
+                plt.figure()
+                plt.imshow(map_morph_block)
+                plt.figure()
+                plt.imshow(img0_block)
+
+                plt.figure()
+                for idx, bl in enumerate(list_img0_warped_block):
+                    plt.subplot(2,2, idx+1)
+                    plt.imshow(bl.astype('uint8'))
+
+            def calc_hist(img0_block):
+                imgs = [img0_block[:,:,i].astype('uint8') for i in range(3)]
+                hist = [cv2.calcHist([img], [0,],  map_morph_block.astype('uint8'), [8,], [0, 256], ) for img in imgs]
+                hist = numpy.vstack(hist)
+            #     print hist
+                hist = cv2.normalize(hist)
+                return hist
+
+            hist = calc_hist(img0_block)
             list_hist = map(calc_hist, list_img0_warped_block)
-            list_dist = map(lambda list1: cv2.compareHist(list1, hist, cv2.cv.CV_COMP_CHISQR), list_hist)
+            #print "list_hist", len(list_hist), [hi.shape for hi in list_hist], list_hist
+
+            if 0:
+                plt.figure()
+                plt.plot(hist.ravel(), )
+    #             plt.figure(figsize=(20,10))
+                for idx, hi in enumerate(list_hist):
+    #                 plt.subplot(2,2, idx+1)
+                    plt.plot(hi.ravel(), '+x.*'[idx])
+        #                 print "d", numpy.abs(hist-hi).sum()
+        #                 print list_hist[idx]
+            list_dist = map(lambda hist1: cv2.compareHist(hist1, hist, cv2.cv.CV_COMP_BHATTACHARYYA), list_hist)
+            print "list_dist", list_dist
             idx_best = numpy.argmin(list_dist)
-            
+
             get_patch(u_res)[:,:] = get_patch(list_flow_bwd_filt_coeff[idx_best][0])
             get_patch(v_res)[:,:] = get_patch(list_flow_bwd_filt_coeff[idx_best][1])
             get_patch(dpt_res)[:,:] = get_patch(list_dpt0_warped[idx_best])
-#             distances = map(lambda warped_block: )
+    #             distances = map(lambda warped_block: )
+#             break
+#         break
 
-            
+
     return u_res, v_res, dpt_res
 
 print img0.shape
-u_res, v_res, dpt_res = block_histo_choose(img1, list_img0_warped, list_flow_bwd_filt_coeff, list_img0_warped)
-    
-# plt.figure()
-# plt.imshow(morph)
-# vh.plot_optical_flow(*flow_bwd, stepu=8, stepv=4)
+u_res, v_res, dpt_res = block_histo_choose(morph<th_morph, img1, list_img0_warped, list_flow_bwd_filt_coeff, list_img0_warped)
 
-# plt.figure()
-# plt.imshow(morph)
-# vh.plot_optical_flow(*flow_bwd_filt, stepu=8, stepv=4)
 
-# numpy.median(u1s)
-
-plt.figure()
-plt.imshow(img1)
-plt.figure()
-plt.imshow(img0)
 plt.figure()
 img0_warped = algo.fastdeepflow.warp_image(img0, *flow_fwd).astype('uint8')
 plt.imshow(img0_warped)
@@ -422,6 +586,78 @@ img0_warped_fixed = img0_warped.copy()
 img0_warped_fixed[morph<th_morph] = dpt_res[morph<th_morph]
 plt.figure()
 plt.imshow(dpt_res.astype('uint8'))
+plt.figure()
+plt.imshow(img0_warped_fixed.astype('uint8'))
+
+
+# In[261]:
+
+cv2.compareHist(hi.ravel(), hist.ravel(), method=cv2.cv.CV_COMP_CHISQR )
+# hist
+
+
+# In[278]:
+
+img0_block.shape
+
+
+# In[311]:
+
+def calc_hist_d(img0_block):
+    hist = cv2.calcHist([img0_block.astype('uint8')], [0, 1, 2], 
+                        map_morph_block.astype('uint8'), [16,]*3, [0, 256]*3, )
+    hist = cv2.normalize(hist)
+    return hist
+
+def calc_hist_d2(img0_block):
+    imgs = [img0_block[:,:,i].astype('uint8') for i in range(3)]
+    hist = [cv2.calcHist([img], [0,],  map_morph_block.astype('uint8'), [16,], [0, 256], ) for img in imgs]
+    hist = numpy.vstack(hist)
+#     print hist
+    hist = cv2.normalize(hist)
+    return hist
+
+hhh = calc_hist_d2(img0_block)
+print hhh.shape
+plt.plot(hhh)
+# Q = hhh.cumsum()
+# plt.imshow(hhh.sum(axis=0), vmin=0, vmax=1)
+# plt.figure()
+# Q.shape
+# # plt.imshow(Q.sum(axis=0), vmin=0, vmax=1)
+# numpy.cumsum(hhh)#.shape
+
+
+# In[283]:
+
+img0_block[:,:,0].shape
+
+
+# In[340]:
+
+for idx, bl in enumerate(list_img0_warped_block):
+    plt.subplot(2,2, idx+1)
+    plt.imshow(bl.astype('uint8'))
+    
+plt.figure()
+plt.imshow(img0_block)
+plt.figure()
+t0 = calc_hist_d2(img0_block)
+for idx, bl in enumerate(list_img0_warped_block):
+    plt.subplot(2,2, idx+1)
+    #cv2.calcHist(bl.astype('uint8'), [0,1,2], None, histSize=[8,]*3, ranges=[0, 256,]*3)
+#     cv2.calcHist(bl.astype('uint8'), [0, 1, 2], None, [8,]*3, [0, 256]*3)
+    t1 = calc_hist_d2(bl)
+    plt.plot(t1)
+    print cv2.compareHist(t0, t1, cv2.cv.CV_COMP_BHATTACHARYYA)
+    
+plt.figure()
+plt.plot(t0)
+
+
+# In[151]:
+
+dpt_res.max()
 
 
 # In[132]:
