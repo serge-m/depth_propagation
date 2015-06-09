@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy
 import numpy as np
 
-def plot_optical_flow(nu, nv, stepu=4, stepv=4):
+def plot_optical_flow(nu, nv, stepu=4, stepv=4, axes=plt):
     u = nu[::stepu, ::stepv]
     v = nv[::stepu, ::stepv]
     
@@ -11,7 +11,7 @@ def plot_optical_flow(nu, nv, stepu=4, stepv=4):
     idx, idy = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
     idx, idy = idx[::stepu, ::stepv], idy[::stepu, ::stepv]
 
-    plt.quiver(idx, idy, u, v, scale_units='xy', angles='xy', scale = 1., color='g')
+    axes.quiver(idx, idy, u, v, scale_units='xy', angles='xy', scale=1., color='g')
 
 
 def save_optical_flow_vis(path_dst, u, v, stepu=4, stepv=4):
