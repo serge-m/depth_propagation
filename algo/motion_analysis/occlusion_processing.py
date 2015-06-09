@@ -42,7 +42,7 @@ def warp_image(img0, u, v):
         return algo.fastdeepflow.warp_image(img0, u, v)
 
 
-def prepare_candidates(img0, flow_fwd, flow_bwd, map_occl):
+def prepare_candidates(img0, flow_fwd, flow_bwd, map_occl, return_intermediate=False):
     logger = logging.getLogger(__name__)
     start = time()
     flow_bwd_filt = block_mv_median_for_occlusions(flow_bwd, map_occl=map_occl)
@@ -52,13 +52,21 @@ def prepare_candidates(img0, flow_fwd, flow_bwd, map_occl):
 
     list_img0_warped = [warp_image(img0, *flow_fwd),]
 
+    if return_intermediate:
+        list_flow = [flow_fwd]
+
     for coeff in list_coeffs:
         flow_bwd_filt_coeff = coeff[0]*flow_bwd_filt[0], coeff[1]*flow_bwd_filt[1]
         list_img0_warped.append(warp_image(img0, *flow_bwd_filt_coeff))
+        if return_intermediate:
+            list_flow.append(flow_bwd_filt_coeff)
+
+    if return_intermediate:
+        return list_img0_warped, dict(list_flow=list_flow, list_coeffs=list_coeffs)
     return list_img0_warped
 
 
-def block_histo_choose(map_occl, img1, list_img0_warped, list_dpt0_warped, th_num_occl):
+def block_histo_choose(map_occl, img1, list_img0_warped, list_dpt0_warped, th_num_occl, return_intermediate=False):
     logger = logging.getLogger(__name__)
     dpt_res = numpy.zeros_like(list_dpt0_warped[0])
 
@@ -134,24 +142,38 @@ def calc_covered(flow_bwd):
     return morph
 
 
-def compensate_and_fix_occlusions(img0, img1, flow_fwd, flow_bwd, dpt0, th_occl):
+def compensate_and_fix_occlusions(img0, img1, flow_fwd, flow_bwd, dpt0, th_occl, return_intermediate=False,
+                                  func_block_histo_choose=block_histo_choose):
 
     occl = calc_covered(flow_bwd=flow_bwd)
     map_occl = occl < th_occl
 
-    list_img0_warped = prepare_candidates(img0, flow_fwd=flow_fwd, flow_bwd=flow_bwd, map_occl=map_occl)
-    list_dpt0_warped = prepare_candidates(dpt0, flow_fwd=flow_fwd, flow_bwd=flow_bwd, map_occl=map_occl)
+    list_img0_warped = prepare_candidates(img0, flow_fwd=flow_fwd, flow_bwd=flow_bwd, map_occl=map_occl, return_intermediate=return_intermediate)
+    list_dpt0_warped = prepare_candidates(dpt0, flow_fwd=flow_fwd, flow_bwd=flow_bwd, map_occl=map_occl, return_intermediate=return_intermediate)
 
-    dpt_res, _ = block_histo_choose(map_occl=map_occl, img1=img1,
+    if return_intermediate:
+        list_img0_warped, interm_img_candidates = list_img0_warped
+        list_dpt0_warped, interm_dpt_candidates = list_dpt0_warped
+
+    dpt_occl_filtered, data_block_choose = func_block_histo_choose(map_occl=map_occl, img1=img1,
                                      list_img0_warped=list_img0_warped,
                                      list_dpt0_warped=list_dpt0_warped,
-                                     th_num_occl=block_size ** 2 / 2)
+                                     th_num_occl=block_size ** 2 / 2,
+                                     return_intermediate=return_intermediate)
 
-    img0_warped = list_img0_warped[0]
     dpt0_warped = list_dpt0_warped[0]
     dpt0_warped_fixed = dpt0_warped.copy()
-    # print map_occl.shape, dpt0_warped_fixed.shape, dpt_res.shape
-    # print map_occl
-    dpt0_warped_fixed[map_occl] = dpt_res[map_occl]
+    dpt0_warped_fixed[map_occl] = dpt_occl_filtered[map_occl]
+
+    if return_intermediate:
+        intermediate_data = dict(occl=occl,
+                                 map_occl=map_occl,
+                                 list_img0_warped=list_img0_warped,
+                                 list_dpt0_warped=list_dpt0_warped,
+                                 dpt_occl_filtered=dpt_occl_filtered,
+                                 data_block_choose=data_block_choose,
+                                 interm_img_candidates=interm_img_candidates,
+                                 interm_dpt_candidates=interm_dpt_candidates)
+        return dpt0_warped_fixed, intermediate_data
 
     return dpt0_warped_fixed
