@@ -111,6 +111,7 @@ def block_histo_choose1(map_occl, img1, list_img0_warped, list_dpt0_warped, th_n
         #                 print list_hist[idx]
 
             list_dist = map(lambda hist_tmp: cv2.compareHist(hist_tmp, hist, cv2.cv.CV_COMP_BHATTACHARYYA), list_hist)
+#             list_dist = map(lambda block: utils.image.abs_diff(block, img1_block).sum(), list_img0_warped_block)
             logger.debug("list_dist {}".format(list_dist))
             idx_best = numpy.argmin(list_dist)
 
@@ -129,7 +130,7 @@ def block_histo_choose1(map_occl, img1, list_img0_warped, list_dpt0_warped, th_n
 
 
 
-# In[5]:
+# In[11]:
 
 def get_flow_choice(interm):
     list_flow = interm['interm_dpt_candidates']['list_flow']
@@ -146,10 +147,10 @@ def sf_default(dir_base, path, img, flow=None, kwargs_imshow=dict()):
     assert(path is not None)
     path = os.path.join(dir_base, path)
     
-    plt.figure(figsize=(20,20), dpi=300)
+    plt.figure(figsize=(15,7), dpi=300)
     plt.imshow(img, **kwargs_imshow)
     if flow:
-        vh.plot_optical_flow(*flow)
+        vh.plot_optical_flow(*flow, stepu = 8, stepv = 8)
     directory = os.path.dirname(path)
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -165,10 +166,11 @@ def generate_debug(s_img0, s_img1, s_dpt0, s_dpt1, name):
     s_dpt0_warped_fixed, interm = op.compensate_and_fix_occlusions(s_img0, s_img1, s_flow_fwd, s_flow_bwd, s_dpt0, 
                                                            th_occl=0.9, 
                                                            return_intermediate=True, 
-                                                           func_block_histo_choose=block_histo_choose1)
+                                                           func_block_histo_choose=block_histo_choose1,
+                                                                  )
     
     
-    
+    print interm.keys()
     map_choise = interm['data_block_choose']['map_choice']
     choice_flow = get_flow_choice(interm)
     
@@ -187,9 +189,17 @@ def generate_debug(s_img0, s_img1, s_dpt0, s_dpt1, name):
     start_idx_vis = 4
     list_flow = interm['interm_dpt_candidates']['list_flow']
     for idx in range(5):
-        sf('img0_warped_{}_flow.png'.format(idx), 
+        sf('img0_warped/img0_warped_{}_flow.png'.format(idx), 
            interm['list_img0_warped'][idx].astype('uint8'),
            list_flow[idx])
+        sf('img0_warped/img0_warped_{}.png'.format(idx), 
+           interm['list_img0_warped'][idx].astype('uint8'))
+        
+        sf('dpt0_warped/dpt0_warped_{}_flow.png'.format(idx), 
+           interm['list_dpt0_warped'][idx].astype('uint8'),
+           list_flow[idx])
+        sf('dpt0_warped/dpt0_warped_{}.png'.format(idx), 
+           interm['list_dpt0_warped'][idx].astype('uint8'))
 
     sf("map_choice.png", map_choise, kwargs_imshow=dict(vmin=0, vmax=4))
     sf("map_choice_flow.png", map_choise, flow=choice_flow, kwargs_imshow=dict(vmin=0, vmax=4))
@@ -203,24 +213,189 @@ def generate_debug(s_img0, s_img1, s_dpt0, s_dpt1, name):
     sf("map_occl_flow_fwd.png", interm['map_occl'], flow=s_flow_fwd)
     sf("occl_flow_fwd.png", interm['occl'], flow=s_flow_fwd)
     
-
-
-# In[6]:
-
-import tests.test_dp_color_mapping
-
-img, dpt, dpt_gt = tests.test_dp_color_mapping.load_data(list_idx_frame_as_start=[0,9])
-img0, img1 = img[3], img[4]
-dpt0, dpt1 = dpt_gt[3], dpt_gt[4]
-# generate_debug(img0, img1, dpt0, dpt1, "sintel_crop")
-# print "img1.shape", img1.shape
-generate_debug(img1, img0, dpt1, dpt0, "sintel_crop_reverse")
+    sf("s_dpt0_warped.png", s_dpt0_warped)
+    sf("s_dpt0_warped_flow_fwd.png", s_dpt0_warped, s_flow_fwd)
+    sf("s_dpt0_warped_fixed.png", s_dpt0_warped_fixed)
+    sf("s_dpt0_warped_fixed_choice_flow.png", s_dpt0_warped_fixed, choice_flow)
 
 
 # In[ ]:
 
 
 
+
+# In[12]:
+
+path_dir_cur = "./tests/"
+path_dir_input = os.path.join(path_dir_cur, 'data/input', '')
+path_result_dir = os.path.join(path_dir_cur, 'data/results/dp_color_mapping', '')
+path_reference_dir = os.path.join(path_dir_cur, 'data/reference', '')
+
+def load_data(name,
+              idx_frame_start = 1,
+              list_idxs_to_load = [],
+              slice_dim0=slice(None), slice_dim1=slice(None),
+              ):
+
+    templ_path_frm = os.path.join(path_dir_input, 'sintel/final/'    , name, 'frame_{:04d}.png')
+    templ_path_dpt = os.path.join(path_dir_input, 'sintel/depth_viz/', name, 'frame_{:04d}.png')
+
+    def load_and_crop(path):
+        img = utils.image.imread(path)
+        img = img[slice_dim0,slice_dim1,]
+        return img
+
+    img = [load_and_crop(templ_path_frm.format(idx_frame_start+i)) for i in list_idxs_to_load]
+    dpt = [cv2.cvtColor(load_and_crop(templ_path_dpt.format(idx_frame_start+i)), cv2.COLOR_RGB2GRAY) for i in list_idxs_to_load]
+
+    
+    return img, dpt
+
+
+# In[13]:
+
+# rs = numpy.random.RandomState(0)
+# a = rs.randint(0, 10, (10,20))
+# sl = slice(None)
+# print a
+# print  a[sl]==a
+
+
+# In[14]:
+
+import tests.test_dp_color_mapping
+
+# idx = 3
+# img, dpt = tests.test_dp_color_mapping.load_data(list_idx_frame_as_start=[0,9])
+# img0, img1 = img[idx], img[idx+1]
+# dpt0, dpt1 = dpt_gt[idx], dpt_gt[idx+1]
+# generate_debug(img0, img1, dpt0, dpt1, "sintel_crop")
+# print "img1.shape", img1.shape
+
+# generate_debug(img1, img0, dpt1, dpt0, "sintel_crop_reverse")
+
+
+# In[ ]:
+
+name = "alley_2"
+slice_dim0=slice(150,350)
+slice_dim1=slice(250,400)
+list_idxs_to_load = [0,1]
+name_to_save = "{}_{}_{}_{}".format(name, slice_dim0, slice_dim1, list_idxs_to_load)
+img, dpt = load_data(name, 1, list_idxs_to_load=list_idxs_to_load, slice_dim0=slice_dim0, slice_dim1=slice_dim1)
+
+generate_debug(img[0], img[1], dpt[0], dpt[1], name_to_save)
+generate_debug(img[1], img[0], dpt[1], dpt[0], name_to_save +"_rev")
+
+
+# In[ ]:
+
+name = "cave_2"
+slice_dim0=slice(None)
+slice_dim1=slice(None)
+list_idxs_to_load = [0,1]
+name_to_save = "{}_{}_{}_{}".format(name, slice_dim0, slice_dim1, list_idxs_to_load)
+img, dpt = load_data(name, 1, list_idxs_to_load=list_idxs_to_load, slice_dim0=slice_dim0, slice_dim1=slice_dim1)
+
+generate_debug(img[0], img[1], dpt[0], dpt[1], name_to_save)
+generate_debug(img[1], img[0], dpt[1], dpt[0], name_to_save +"_rev")
+
+
+# In[10]:
+
+name = "cave_2"
+slice_dim0=slice(None)
+slice_dim1=slice(None)
+list_idxs_to_load = [8,9]
+name_to_save = "{}_{}_{}_{}".format(name, slice_dim0, slice_dim1, list_idxs_to_load)
+img, dpt = load_data(name, 1, list_idxs_to_load=list_idxs_to_load, slice_dim0=slice_dim0, slice_dim1=slice_dim1)
+
+generate_debug(img[0], img[1], dpt[0], dpt[1], name_to_save)
+generate_debug(img[1], img[0], dpt[1], dpt[0], name_to_save +"_rev")
+
+
+# In[ ]:
+
+name = "bamboo_1"
+slice_dim0=slice(None)
+slice_dim1=slice(None)
+list_idxs_to_load = [0,1]
+name_to_save = "{}_{}_{}_{}".format(name, slice_dim0, slice_dim1, list_idxs_to_load)
+img, dpt = load_data(name, 1, list_idxs_to_load=list_idxs_to_load, slice_dim0=slice_dim0, slice_dim1=slice_dim1)
+
+generate_debug(img[0], img[1], dpt[0], dpt[1], name_to_save)
+generate_debug(img[1], img[0], dpt[1], dpt[0], name_to_save +"_rev")
+
+name = "bamboo_1"
+slice_dim0=slice(None)
+slice_dim1=slice(None)
+list_idxs_to_load = [8,9]
+name_to_save = "{}_{}_{}_{}".format(name, slice_dim0, slice_dim1, list_idxs_to_load)
+img, dpt = load_data(name, 1, list_idxs_to_load=list_idxs_to_load, slice_dim0=slice_dim0, slice_dim1=slice_dim1)
+
+generate_debug(img[0], img[1], dpt[0], dpt[1], name_to_save)
+generate_debug(img[1], img[0], dpt[1], dpt[0], name_to_save +"_rev")
+
+
+# In[ ]:
+
+name = "alley_1"
+slice_dim0=slice(None)
+slice_dim1=slice(None)
+list_idxs_to_load = [0,1]
+name_to_save = "{}_{}_{}_{}".format(name, slice_dim0, slice_dim1, list_idxs_to_load)
+img, dpt = load_data(name, 1, list_idxs_to_load=list_idxs_to_load, slice_dim0=slice_dim0, slice_dim1=slice_dim1)
+
+generate_debug(img[0], img[1], dpt[0], dpt[1], name_to_save)
+generate_debug(img[1], img[0], dpt[1], dpt[0], name_to_save +"_rev")
+
+name = "alley_1"
+slice_dim0=slice(None)
+slice_dim1=slice(None)
+list_idxs_to_load = [8,9]
+name_to_save = "{}_{}_{}_{}".format(name, slice_dim0, slice_dim1, list_idxs_to_load)
+img, dpt = load_data(name, 1, list_idxs_to_load=list_idxs_to_load, slice_dim0=slice_dim0, slice_dim1=slice_dim1)
+
+generate_debug(img[0], img[1], dpt[0], dpt[1], name_to_save)
+generate_debug(img[1], img[0], dpt[1], dpt[0], name_to_save +"_rev")
+
+
+# In[ ]:
+
+name = "alley_2"
+slice_dim0=slice(None)
+slice_dim1=slice(None)
+list_idxs_to_load = [0,1]
+name_to_save = "{}_{}_{}_{}".format(name, slice_dim0, slice_dim1, list_idxs_to_load)
+img, dpt = load_data(name, 1, list_idxs_to_load=list_idxs_to_load, slice_dim0=slice_dim0, slice_dim1=slice_dim1)
+
+generate_debug(img[0], img[1], dpt[0], dpt[1], name_to_save)
+generate_debug(img[1], img[0], dpt[1], dpt[0], name_to_save +"_rev")
+
+name = "alley_2"
+slice_dim0=slice(None)
+slice_dim1=slice(None)
+list_idxs_to_load = [8,9]
+name_to_save = "{}_{}_{}_{}".format(name, slice_dim0, slice_dim1, list_idxs_to_load)
+img, dpt = load_data(name, 1, list_idxs_to_load=list_idxs_to_load, slice_dim0=slice_dim0, slice_dim1=slice_dim1)
+
+generate_debug(img[0], img[1], dpt[0], dpt[1], name_to_save)
+generate_debug(img[1], img[0], dpt[1], dpt[0], name_to_save +"_rev")
+
+
+# In[71]:
+
+slice_dim0
+
+
+# In[39]:
+
+plt.subplot(221)
+plt.imshow(img[0])
+plt.subplot(222)
+plt.imshow(img[1])
+
+dpt
 
 
 # In[33]:
