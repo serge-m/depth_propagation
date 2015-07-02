@@ -75,14 +75,14 @@ class DockAreaWithKeyMapping(DockArea):
         first_widget = None
         self.list_dock = []
         for idx, (name, image) in enumerate(dict_name_image.items()):
-            d = DockWithKeyMapping(name=name, size=(500, 200), dict_key_mapping=self.dict_key_mapping,
-                                   set_keys_accepted=self.set_keys_accepted)
+            d = DockWithKeyMapping(name=os.path.basename(name)[:20], size=(100, 200), dict_key_mapping=self.dict_key_mapping,
+                                   set_keys_accepted=self.set_keys_accepted, closable=False)
 
             self.addDock(d, 'above')
 
-            w = pg.PlotWidget(title="ololo" + name)
+            w = pg.PlotWidget(title="ololo" + name, setAspectLocked=True)
             img_item = pg.ImageItem()
-            img_item.setImage(image)
+            img_item.setImage(image.transpose(1,0,2)[:,::-1,:])
             w.addItem(img_item)
             d.addWidget(w)
             if first_widget is None:
