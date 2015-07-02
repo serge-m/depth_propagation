@@ -420,31 +420,14 @@ dpt
 
 
 # In[29]:
+# TODO:
+# 1) FG - short MV, BG - long MV. In backward direction FG also has short MV.
+# So MV filtering cannot get long vectors to fix errors.
+# ~/work/of/py/utils/dump/cave_2_slice(None, None, None)_slice(None, None, None)_[0, 1] - nead the head
+# The same problem can be if FG BWD has long MV, and BG has short MV
+# 2) too wide occlusion areas are bad also because they prevent from good matching thin occlusions with shifts from
+# candidate set
 
-interm.keys()
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[20]:
-
-123123
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
 
 
 
