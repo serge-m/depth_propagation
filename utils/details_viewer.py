@@ -13,7 +13,8 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 import scipy.misc
 from pyqtgraph.dockarea import *
-
+import glob
+from collections import OrderedDict
 
 list_keys_accepted = [
     QtCore.Qt.Key_1,
@@ -226,8 +227,18 @@ if __name__ == '__main__':
         )
         parameters = parser.parse_args(sys.argv[1:])
 
-        list_tpl_name_image = {(path if parameters.use_short_path else os.path.abspath(path)): scipy.misc.imread(path)
-                               for path in parameters.files}
+        parameters.expanded_files = []
+        for path in parameters.files:
+            if '*' in path:
+                parameters.expanded_files.extend(glob.glob(path))
+            else:
+                parameters.expanded_files.append(path)
+
+
+
+        list_tpl_name_image = OrderedDict([((path if parameters.use_short_path else os.path.abspath(path)),
+                                            scipy.misc.imread(path))
+                               for path in parameters.expanded_files])
 
         app = QtGui.QApplication.instance()
         if not app:
