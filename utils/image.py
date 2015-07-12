@@ -19,7 +19,7 @@ def imread(path):
         raise Exception("Unsupported number of dimensions")
         
     if img.ndim == 3 and img.shape[-1] == 3:
-        img = img[:,:,::-1]
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
     return img
 
