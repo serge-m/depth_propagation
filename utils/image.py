@@ -40,5 +40,23 @@ def abs_diff(img0, img1):
     return numpy.abs(img0-img1.astype('float32'))
 
 
+def load_image_sequence(list_paths):
+    """
+    Loads image sequence
+    :param list_paths: list of images paths
+    :return: list of images
+    """
+    return [imread(path) for path in list_paths]
+
+
+def crop_image_sequence(list_img, slice_dim0, slice_dim1):
+    """
+    Crop all images in the sequence
+    :param list_img: original images
+    :param slice_dim0: slice for the 0-dimension (usually y)
+    :param slice_dim1: slice for the 1-dimension (usually x)
+    :return: list of cropped images
+    """
+    return [img[slice_dim0, slice_dim1] for img in list_img]
 
 
