@@ -51,6 +51,9 @@
             "level": "ERROR",
             "handlers": ["console"],
             "propagate": "no"
+        },
+        "algo.motion_analysis.occlusion_processing": {
+          "level": "INFO"
         }
     },
 
