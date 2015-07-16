@@ -46,7 +46,7 @@ def load_image_sequence(list_paths):
     :param list_paths: list of images paths
     :return: list of images
     """
-    return [imread(path) for path in list_paths]
+    return map(imread, list_paths)
 
 
 def crop_image_sequence(list_img, slice_dim0, slice_dim1):
@@ -57,6 +57,6 @@ def crop_image_sequence(list_img, slice_dim0, slice_dim1):
     :param slice_dim1: slice for the 1-dimension (usually x)
     :return: list of cropped images
     """
-    return [img[slice_dim0, slice_dim1] for img in list_img]
+    return map(lambda img: img[slice_dim0, slice_dim1], list_img)
 
 
