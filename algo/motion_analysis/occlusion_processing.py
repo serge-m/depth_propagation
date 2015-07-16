@@ -142,11 +142,8 @@ def calc_covered(flow_bwd):
     return morph
 
 
-def compensate_and_fix_occlusions(img0, img1, flow_fwd, flow_bwd, dpt0, th_occl, return_intermediate=False,
+def compensate_and_fix_occlusions2(img0, img1, flow_fwd, flow_bwd, dpt0, map_occl, return_intermediate=False,
                                   func_block_histo_choose=block_histo_choose):
-
-    occl = calc_covered(flow_bwd=flow_bwd)
-    map_occl = occl < th_occl
 
     list_img0_warped = prepare_candidates(img0, flow_fwd=flow_fwd, flow_bwd=flow_bwd, map_occl=map_occl, return_intermediate=return_intermediate)
     list_dpt0_warped = prepare_candidates(dpt0, flow_fwd=flow_fwd, flow_bwd=flow_bwd, map_occl=map_occl, return_intermediate=return_intermediate)
@@ -166,8 +163,7 @@ def compensate_and_fix_occlusions(img0, img1, flow_fwd, flow_bwd, dpt0, th_occl,
     dpt0_warped_fixed[map_occl] = dpt_occl_filtered[map_occl]
 
     if return_intermediate:
-        intermediate_data = dict(occl=occl,
-                                 map_occl=map_occl,
+        intermediate_data = dict(map_occl=map_occl,
                                  list_img0_warped=list_img0_warped,
                                  list_dpt0_warped=list_dpt0_warped,
                                  dpt_occl_filtered=dpt_occl_filtered,
@@ -177,3 +173,19 @@ def compensate_and_fix_occlusions(img0, img1, flow_fwd, flow_bwd, dpt0, th_occl,
         return dpt0_warped_fixed, intermediate_data
 
     return dpt0_warped_fixed
+
+
+def compensate_and_fix_occlusions(img0, img1, flow_fwd, flow_bwd, dpt0, th_occl, return_intermediate=False,
+                                  func_block_histo_choose=block_histo_choose):
+
+    occl = calc_covered(flow_bwd=flow_bwd)
+    map_occl = occl < th_occl
+
+    res = compensate_and_fix_occlusions2(img0, img1, flow_fwd, flow_bwd, dpt0, map_occl=map_occl,
+                                         return_intermediate=return_intermediate,
+                                         func_block_histo_choose=func_block_histo_choose)
+    
+    if return_intermediate:
+        res[1].update(occl=occl)
+
+    return res
